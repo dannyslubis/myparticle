@@ -36,40 +36,36 @@
         /* === SCENE: PULAU JUMLAH PARTIKEL === */
         #scene-partikel { z-index: 10; display: none; }
         
-        /* 1. Background Kanvas */
+        /* Kanvas Utama */
         #layer-canvas-partikel { background-image: url('kanvasmbp.png'); z-index: 1; }
 
-        /* 2. Engine Lattice Tak Terhingga (Draggable) */
+        /* Wadah Penangkapan Kursor/Sentuhan */
         #layer-lattice-container {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             z-index: 2; overflow: hidden; cursor: grab;
         }
         #layer-lattice-container:active { cursor: grabbing; }
 
+        /* Tiling Infinity Background (Looping Sempurna) */
         #infinite-lattice {
-            position: absolute;
-            width: 300%; height: 300%;
-            top: -100%; left: -100%;
-            /* Menggabungkan Na+ dan Cl- dalam pola berselang-seling */
-            background-image: url('mbpartna.png'), url('mbpartcl.png');
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background-size: 6cqw 6cqw, 6cqw 6cqw;
-            background-position: 0 0, 3cqw 3cqw;
-            background-repeat: repeat;
+            background-repeat: repeat, repeat;
         }
 
-        /* 3. Lapisan UI Pendukung */
+        /* UI Overlays */
         #layer-infokey { background-image: url('mbpinfokey.png'); z-index: 3; pointer-events: none; }
         #layer-zat-label { background-image: url('mbpnacl.png'); z-index: 4; pointer-events: none; }
         #layer-nav-partikel { background-image: url('mbkey2.png'); z-index: 4; pointer-events: none; }
 
-        /* Teks Jumlah Mol (n7-p7) -> x: 81.25%, y: 66.66% */
+        /* Teks Jumlah Mol di Kanvas (n7-p7 -> x: 81.25%, y: 66.66%) */
         #text-mol-display {
             position: absolute; left: 81.25%; top: 66.66%; width: 18.75%; height: 11.11%;
             display: flex; justify-content: center; align-items: center;
             color: white; font-size: 4cqw; z-index: 5; text-shadow: 2px 2px 0 #000;
         }
 
-        /* Tombol Transparan */
+        /* Sistem Tombol Grid Transparan */
         .btn-grid { position: absolute; background: transparent; border: none; cursor: pointer; z-index: 10; }
 
         /* === POP-UP HITUNG JUMLAH PARTIKEL === */
@@ -78,10 +74,10 @@
 
         .calc-text {
             position: absolute; display: flex; align-items: center; 
-            color: #000; font-size: 3.5cqw; font-weight: bold;
+            color: #000; font-size: 3.5cqw; 
         }
         
-        /* g5-i5: Teks Mol (x:37.5%, y:44.44%, w:18.75%, h:11.11%) */
+        /* g5-i5: Input Mol (x:37.5%, y:44.44%, w:18.75%, h:11.11%) */
         #calc-input-mol { left: 37.5%; top: 44.44%; width: 18.75%; height: 11.11%; justify-content: center; } 
         
         /* g6-h6: Hasil Partikel (x:37.5%, y:55.55%, w:12.5%, h:11.11%) */
@@ -113,13 +109,14 @@
 
         <button class="btn-grid" style="left: 93.75%; top: 0%; width: 6.25%; height: 11.11%;" onclick="kembaliKeTitle()"></button>
 
-        <button class="btn-grid" style="left: 81.25%; top: 11.11%; width: 18.75%; height: 11.11%;" onclick="alert('Menu Penentuan Mol (Standby)')"></button>
-        <button class="btn-grid" style="left: 81.25%; top: 22.22%; width: 18.75%; height: 11.11%;" onclick="alert('Menu Molaritas (Standby)')"></button>
+        <button class="btn-grid" style="left: 81.25%; top: 11.11%; width: 18.75%; height: 11.11%;" onclick="alert('Pindah ke Simulasi Mol (Standby)')"></button>
+        <button class="btn-grid" style="left: 81.25%; top: 22.22%; width: 18.75%; height: 11.11%;" onclick="alert('Pindah ke Simulasi Molaritas (Standby)')"></button>
         
         <button class="btn-grid" style="left: 81.25%; top: 77.77%; width: 18.75%; height: 11.11%;" onclick="bukaHitungPartikel()"></button>
 
         <div id="popup-calc-partikel" class="layer popup-layer">
-            <button class="btn-grid" style="left: 93.75%; top: 22.22%; width: 6.25%; height: 11.11%; z-index: 21;" onclick="tutupHitungPartikel()"></button>
+            <button class="btn-grid" style="left: 87.5%; top: 22.22%; width: 6.25%; height: 11.11%; z-index: 21;" onclick="tutupHitungPartikel()"></button>
+            
             <div id="calc-input-mol" class="calc-text">0 mol</div>
             <div id="calc-result-partikel" class="calc-text">0</div>
         </div>
@@ -129,9 +126,9 @@
 
 <script>
     // --- STATE SIMULASI ---
-    let globalMol = 1.0; // Dilock 1 mol untuk contoh saat ini
+    let globalMol = 1.00; // Coba ubah angka ini menjadi 0 untuk mengetes hilangnya atom
 
-    // Format Aturan Khusus: Desimal 2 angka, nol mutlak tidak pakai koma
+    // Format Desimal 2 Angka (0 mutlak tanpa koma)
     function formatDesimal(angka) {
         if (angka === 0) return "0";
         return angka.toFixed(2).replace('.', ',');
@@ -141,9 +138,9 @@
     const sceneTitle = document.getElementById('scene-title');
     const scenePartikel = document.getElementById('scene-partikel');
     const popCalcPartikel = document.getElementById('popup-calc-partikel');
+    const latticeBg = document.getElementById('infinite-lattice');
 
     function mulaiSimulasi() {
-        // Transisi Fade Out 0.5s
         sceneTitle.style.opacity = '0';
         setTimeout(() => {
             sceneTitle.style.display = 'none';
@@ -154,16 +151,23 @@
 
     function kembaliKeTitle() {
         sceneTitle.style.display = 'block';
-        // Force reflow agar transisi jalan
         void sceneTitle.offsetWidth; 
         sceneTitle.style.opacity = '1';
         scenePartikel.style.display = 'none';
         tutupHitungPartikel();
     }
 
+    // Perbarui visual teks & kemunculan atom
     function updateVisualMol() {
         let txtMol = globalMol === 0 ? "0 mol" : formatDesimal(globalMol) + " mol";
         document.getElementById('text-mol-display').innerText = txtMol;
+
+        // Logika Peniadaan Atom Jika Mol 0
+        if (globalMol === 0) {
+            latticeBg.style.backgroundImage = 'none';
+        } else {
+            latticeBg.style.backgroundImage = "url('mbpartna.png'), url('mbpartcl.png')";
+        }
     }
 
     // --- LOGIKA PERHITUNGAN POP-UP ---
@@ -171,7 +175,6 @@
         let txtMolInput = globalMol === 0 ? "0 mol" : formatDesimal(globalMol) + " mol";
         document.getElementById('calc-input-mol').innerText = txtMolInput;
 
-        // Perhitungan: (Mol * 6.022) untuk mendapatkan hasil presisi sebelum dibulatkan 2 desimal
         let hasilKoefisien = globalMol * 6.022;
         let txtHasil = globalMol === 0 ? "0" : formatDesimal(hasilKoefisien);
         
@@ -183,20 +186,29 @@
         popCalcPartikel.style.display = 'none';
     }
 
-    // --- DRAG & SCROLL LATTICE ENGINE ---
-    // Sistem untuk menggeser background partikel tanpa ujung
+    // --- INFINITE DRAG & DRIFT ENGINE ---
     const latticeContainer = document.getElementById('layer-lattice-container');
-    const latticeBg = document.getElementById('infinite-lattice');
     
     let isDragging = false;
     let startX, startY;
-    let bgPosX = 0, bgPosY = 0; 
+    let driftX = 0, driftY = 0; 
+
+    // Render loop untuk menggerakkan posisi background (Auto-drift & Drag)
+    function renderInfinity() {
+        if (!isDragging && globalMol > 0) {
+            driftX += 0.3; // Kecepatan hanyut horizontal
+            driftY += 0.3; // Kecepatan hanyut vertikal
+        }
+        
+        latticeBg.style.backgroundPosition = `${driftX}px ${driftY}px, calc(${driftX}px + 3cqw) calc(${driftY}px + 3cqw)`;
+        requestAnimationFrame(renderInfinity);
+    }
+    renderInfinity(); 
 
     // Kontrol Mouse
     latticeContainer.addEventListener('mousedown', (e) => {
         isDragging = true; startX = e.clientX; startY = e.clientY;
     });
-
     window.addEventListener('mouseup', () => { isDragging = false; });
     window.addEventListener('mouseleave', () => { isDragging = false; });
     
@@ -204,8 +216,7 @@
         if (!isDragging) return;
         let dx = e.clientX - startX;
         let dy = e.clientY - startY;
-        bgPosX += dx; bgPosY += dy;
-        latticeBg.style.transform = `translate(${bgPosX}px, ${bgPosY}px)`;
+        driftX += dx; driftY += dy;
         startX = e.clientX; startY = e.clientY;
     });
 
@@ -213,15 +224,13 @@
     latticeContainer.addEventListener('touchstart', (e) => {
         isDragging = true; startX = e.touches[0].clientX; startY = e.touches[0].clientY;
     });
-
     window.addEventListener('touchend', () => { isDragging = false; });
     
     window.addEventListener('touchmove', (e) => {
         if (!isDragging) return;
         let dx = e.touches[0].clientX - startX;
         let dy = e.touches[0].clientY - startY;
-        bgPosX += dx; bgPosY += dy;
-        latticeBg.style.transform = `translate(${bgPosX}px, ${bgPosY}px)`;
+        driftX += dx; driftY += dy;
         startX = e.touches[0].clientX; startY = e.touches[0].clientY;
     });
 
